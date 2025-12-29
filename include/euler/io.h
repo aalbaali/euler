@@ -37,6 +37,13 @@ std::ostream& operator<<(std::ostream& os, const euler::Quaternion& q);
  */
 std::ostream& operator<<(std::ostream& os, const euler::RotationMatrix& R);
 
+/**
+ * @brief Pretty print the elements of a quaternion in ROS message format.
+ *
+ * @param os Stream to print in
+ * @param q  Quaternion to print
+ */
+std::ostream& printRosMsg(std::ostream& os, const euler::Quaternion& q);
 }  // namespace euler
 
 #endif

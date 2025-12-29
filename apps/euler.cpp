@@ -6,10 +6,11 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 
 using namespace euler;
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   // Create the parser
   // clang-format off
   argagg::parser arg_parser {{
@@ -43,6 +44,12 @@ int main(int argc, char* argv[]) {
       "The rotation sequence (possible values: xyz, xzy, yxz, yzx, zxy, zyx,\n\t"
       "xyx, xzx, yxy, yzy, zxz, zyz; default: zyx)", 
       1
+    },
+    {
+      "ros",
+      {"--ros"},
+      "Print quaternion in ROS message format",
+      0
     }
   }};
   // clang-format on
@@ -71,8 +78,9 @@ int main(int argc, char* argv[]) {
   argagg::parser_results args;
   try {
     args = arg_parser.parse(argc, argv);
-  } catch (const std::exception& e) {
-    std::cerr << "Error: Invalid arguments.\n\n" << usage.str() << arg_parser << std::endl;
+  } catch (const std::exception &e) {
+    std::cerr << "Error: Invalid arguments.\n\n"
+              << usage.str() << arg_parser << std::endl;
     return -1;
   }
 
@@ -82,6 +90,9 @@ int main(int argc, char* argv[]) {
     return 0;
   }
 
+  // Quaternion format
+  const bool should_format_as_ros = args["ros"];
+
   // Get radians / degrees
   const bool radians = args["radians"];
 
@@ -89,12 +100,14 @@ int main(int argc, char* argv[]) {
   const auto order = args["extrinsic"] ? Order::EXTRINSIC : Order::INTRINSIC;
 
   // Get active // passive
-  const auto direction = args["passive"] ? Direction::PASSIVE : Direction::ACTIVE;
+  const auto direction =
+      args["passive"] ? Direction::PASSIVE : Direction::ACTIVE;
 
   // Get sequence
   const auto sequence = args["sequence"].as<std::string>("zyx");
   if (!isSequenceValid(sequence)) {
-    std::cerr << "Error: Invalid sequence.\n\n" << usage.str() << arg_parser << std::endl;
+    std::cerr << "Error: Invalid sequence.\n\n"
+              << usage.str() << arg_parser << std::endl;
     return -1;
   }
 
@@ -106,8 +119,9 @@ int main(int argc, char* argv[]) {
   }
   Angles angles;
   try {
-    angles = {std::stod(args.pos[0]), std::stod(args.pos[1]), std::stod(args.pos[2])};
-  } catch (const std::invalid_argument&) {
+    angles = {std::stod(args.pos[0]), std::stod(args.pos[1]),
+              std::stod(args.pos[2])};
+  } catch (const std::invalid_argument &) {
     std::cerr << "Error: Invalid angles, must be three real numbers.\n\n"
               << usage.str() << arg_parser << std::endl;
     return -1;
@@ -115,16 +129,27 @@ int main(int argc, char* argv[]) {
 
   // Convert / verify angles
   if (!radians) {
-    std::for_each(angles.begin(), angles.end(), [](double& a) { a *= M_PI / 180; });
+    std::for_each(angles.begin(), angles.end(),
+                  [](double &a) { a *= M_PI / 180; });
   }
 
   // Create rotation matrix and quaternion from arguments
-  const RotationMatrix R = toRotationMatrix(sequence, angles, {order, direction});
+  const RotationMatrix R =
+      toRotationMatrix(sequence, angles, {order, direction});
   const Quaternion q = toQuaternion(R);
 
   // Display results
   std::cout << "\nRotation Matrix:\n" << R << "\n";
-  std::cout << "\nQuaternion:\n" << q << "\n";
+
+  std::stringstream ss;
+  ss << "\nQuaternion:\n";
+  if (should_format_as_ros) {
+    ss << "{\n";
+    euler::printRosMsg(ss, q) << "\n}\n";
+  } else {
+    ss << q << "\n";
+  }
+  std::cout << ss.str();
 
   return 0;
 }

@@ -27,6 +27,18 @@ std::ostream& operator<<(std::ostream& os, const euler::Quaternion& q) {
   return os;
 }
 
+std::ostream& printRosMsg(std::ostream& os, const euler::Quaternion& q) {
+  // clang-format off
+    os << std::fixed << std::setprecision(4) 
+       << "  \"x\": " << std::setw(7) << q[1] << ",\n"
+       << "  \"y\": " << std::setw(7) << q[2] << ",\n"
+       << "  \"z\": " << std::setw(7) << q[3] << ",\n"
+       << "  \"w\": " << std::setw(7) << q[0];
+  // clang-format on
+  return os;
+}
+
+
 std::ostream& operator<<(std::ostream& os, const euler::RotationMatrix& R) {
   // clang-format off
     os << std::fixed << std::setprecision(4)
